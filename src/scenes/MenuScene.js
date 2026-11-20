@@ -13,74 +13,76 @@ export default class MenuScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
     const records = loadRecords();
+    const panelW = Math.min(380, width - 36);
+    const btnW = Math.min(320, width - 48);
 
     this.drawPitchBackground();
 
-    this.add.image(70, height * 0.12, 'ball').setScale(0.45).setAlpha(0.85);
-    this.add.image(width - 70, height * 0.13, 'keeper').setScale(0.58).setAlpha(0.85);
+    this.add.image(36, height * 0.09, 'ball').setScale(0.38).setAlpha(0.85);
+    this.add.image(width - 36, height * 0.1, 'keeper').setScale(0.48).setAlpha(0.85);
 
-    this.add.text(width / 2, height * 0.11, 'QUIZ DE FÚTBOL', {
+    this.add.text(width / 2, height * 0.09, 'QUIZ DE FÚTBOL', {
       fontFamily: FONT,
-      fontSize: '48px',
+      fontSize: width < 400 ? '34px' : '40px',
       fontStyle: '800',
       color: '#f4f0e6',
       stroke: '#0b1f14',
-      strokeThickness: 6,
+      strokeThickness: 5,
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, height * 0.19, 'Respondé. Si errás, pateá el penal.', {
+    this.add.text(width / 2, height * 0.155, 'Respondé. Si errás, pateá el penal.', {
       fontFamily: FONT,
-      fontSize: '18px',
+      fontSize: '15px',
       color: '#b7c9b0',
+      align: 'center',
+      wordWrap: { width: width - 40 },
     }).setOrigin(0.5);
 
-    // Records panel
-    const rec = this.add.rectangle(width / 2, height * 0.32, 520, 70, COLORS.panel, 0.92)
+    const rec = this.add.rectangle(width / 2, height * 0.26, panelW, 72, COLORS.panel, 0.92)
       .setStrokeStyle(2, COLORS.panelBorder);
     this.add.text(rec.x, rec.y - 16, 'Récords locales', {
       fontFamily: FONT,
-      fontSize: '14px',
+      fontSize: '13px',
       color: '#f0c75e',
     }).setOrigin(0.5);
-    this.add.text(rec.x, rec.y + 12, `Rápida: ${records.quick}   ·   Infinito: ${records.infinite}`, {
+    this.add.text(rec.x, rec.y + 14, `Rápida: ${records.quick}  ·  Infinito: ${records.infinite}`, {
       fontFamily: FONT,
-      fontSize: '20px',
+      fontSize: '17px',
       fontStyle: '600',
       color: '#f4f0e6',
     }).setOrigin(0.5);
 
-    // Mode buttons
-    createButton(this, width / 2, height * 0.48, 320, 64, 'PARTIDA RÁPIDA (10)', () => {
+    createButton(this, width / 2, height * 0.42, btnW, 60, 'PARTIDA RÁPIDA (10)', () => {
       this.startMode(MODES.quick);
-    });
+    }, { fontSize: '18px' });
 
-    createButton(this, width / 2, height * 0.60, 320, 64, 'MODO INFINITO', () => {
+    createButton(this, width / 2, height * 0.53, btnW, 60, 'MODO INFINITO', () => {
       this.startMode(MODES.infinite);
-    }, { fill: 0x2f6fed, textColor: '#f4f0e6' });
+    }, { fill: 0x2f6fed, textColor: '#f4f0e6', fontSize: '18px' });
 
-    const tips = this.add.rectangle(width / 2, height * 0.78, 560, 110, COLORS.panel, 0.88)
+    const tips = this.add.rectangle(width / 2, height * 0.72, panelW, 130, COLORS.panel, 0.88)
       .setStrokeStyle(2, COLORS.panelBorder);
-    this.add.text(tips.x, tips.y - 28, 'Tips', {
+    this.add.text(tips.x, tips.y - 42, 'Tips', {
       fontFamily: FONT,
-      fontSize: '14px',
+      fontSize: '13px',
       color: '#f0c75e',
     }).setOrigin(0.5);
     this.add.text(
       tips.x,
-      tips.y + 14,
-      '3 vidas · 12s · categorías Selección / Clubes / Mundial\nPenal: apuntá + potencia · la racha endurece al arquero',
+      tips.y + 10,
+      '3 vidas · 12s por pregunta\nSelección / Clubes / Mundial\nPenal: puntería + potencia\nRojo + punta = se va afuera',
       {
         fontFamily: FONT,
-        fontSize: '15px',
+        fontSize: '14px',
         color: '#f4f0e6',
         align: 'center',
-        lineSpacing: 6,
+        lineSpacing: 5,
       },
     ).setOrigin(0.5);
 
     this.add.text(width / 2, height * 0.94, 'Phaser 3', {
       fontFamily: FONT,
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#6f8f78',
     }).setOrigin(0.5);
   }
@@ -105,7 +107,7 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     g.lineStyle(3, COLORS.cream, 0.15);
-    g.strokeCircle(width / 2, height / 2, 90);
-    g.strokeRect(40, 40, width - 80, height - 80);
+    g.strokeCircle(width / 2, height / 2, 70);
+    g.strokeRect(16, 16, width - 32, height - 32);
   }
 }

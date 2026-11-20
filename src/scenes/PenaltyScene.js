@@ -7,9 +7,9 @@ import { spawnConfetti } from '../ui/confetti.js';
 
 /**
  * Penal con habilidad:
- * 1) Apuntar (cruz móvil en el arco) → click / espacio
- * 2) Potencia (barra oscilante) → click / espacio
- * El arquero reacciona con delay y alcance limitado: ángulos + potencia alta = más difícil.
+ * 1) Apuntar → click / espacio
+ * 2) Potencia → click / espacio
+ * Rojo + punta = afuera. Arquero más duro con la racha.
  */
 export default class PenaltyScene extends Phaser.Scene {
   constructor() {
@@ -19,92 +19,91 @@ export default class PenaltyScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    this.phase = 'aim'; // aim | power | shot
-    this.aimX = 0;
-    this.aimY = 0;
+    this.phase = 'aim';
     this.power = 0.5;
     this.lockedAim = null;
 
     sfx.whistle();
     this.drawStadium();
 
-    this.add.text(width / 2, 28, 'PENAL · SEGUNDA OPORTUNIDAD', {
+    this.add.text(width / 2, 22, 'PENAL', {
       fontFamily: FONT,
-      fontSize: '22px',
+      fontSize: '20px',
       fontStyle: '700',
       color: '#f0c75e',
     }).setOrigin(0.5);
 
     const diff = gameState.keeperDifficulty();
-    const diffLabel = diff < 0.25 ? 'Arquero normal' : diff < 0.55 ? 'Arquero atento' : diff < 0.8 ? 'Arquero caliente' : 'Arquero modo Diluvio';
+    const diffLabel = diff < 0.25 ? 'Arquero normal' : diff < 0.55 ? 'Arquero atento' : diff < 0.8 ? 'Arquero caliente' : 'Arquero Diluvio';
 
-    this.subtitle = this.add.text(width / 2, 52, '1/2 · Apuntá: click o ESPACIO cuando la mira esté donde querés', {
-      fontFamily: FONT,
-      fontSize: '14px',
-      color: '#b7c9b0',
-      align: 'center',
-      wordWrap: { width: width - 80 },
-    }).setOrigin(0.5);
-
-    this.add.text(width / 2, 74, `${diffLabel} · racha ${gameState.streak}`, {
+    this.subtitle = this.add.text(width / 2, 48, '1/2 · Tocá cuando la mira esté donde querés', {
       fontFamily: FONT,
       fontSize: '13px',
+      color: '#b7c9b0',
+      align: 'center',
+      wordWrap: { width: width - 28 },
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 70, `${diffLabel}`, {
+      fontFamily: FONT,
+      fontSize: '12px',
       color: diff >= 0.55 ? '#ffb4a8' : '#f0c75e',
     }).setOrigin(0.5);
 
-    const heartsX = width - 108;
+    const heartsX = width - 96;
     for (let i = 0; i < 3; i += 1) {
       const key = i < gameState.lives ? 'heart' : 'heart-empty';
-      this.add.image(heartsX + i * 34, 32, key).setScale(0.85);
+      this.add.image(heartsX + i * 30, 28, key).setScale(0.75);
     }
 
-    this.goalY = 150;
-    this.goalWidth = 460;
-    this.goalHeight = 175;
+    this.goalY = 110;
+    this.goalWidth = Math.min(360, width - 40);
+    this.goalHeight = 150;
     this.goalX = width / 2;
     this.goalLeft = this.goalX - this.goalWidth / 2;
     this.goalRight = this.goalX + this.goalWidth / 2;
-    this.goalTop = this.goalY + 18;
-    this.goalBottom = this.goalY + this.goalHeight - 18;
+    this.goalTop = this.goalY + 14;
+    this.goalBottom = this.goalY + this.goalHeight - 14;
 
     this.drawGoal();
 
     this.keeperHomeX = this.goalX;
-    this.keeper = this.add.image(this.goalX, this.goalY + 82, 'keeper').setScale(1.15);
-    this.ball = this.add.image(width / 2, height - 150, 'ball').setScale(0.7);
-    this.add.circle(width / 2, height - 150, 5, COLORS.white, 0.7);
+    this.keeper = this.add.image(this.goalX, this.goalY + 72, 'keeper').setScale(1);
+    this.ball = this.add.image(width / 2, height - 175, 'ball').setScale(0.65);
+    this.add.circle(width / 2, height - 175, 5, COLORS.white, 0.7);
 
-    // Aim crosshair
     this.crosshair = this.add.container(this.goalX, this.goalY + this.goalHeight * 0.55);
-    const ring = this.add.circle(0, 0, 16, 0x000000, 0).setStrokeStyle(3, COLORS.gold);
+    const ring = this.add.circle(0, 0, 14, 0x000000, 0).setStrokeStyle(3, COLORS.gold);
     const dot = this.add.circle(0, 0, 4, COLORS.gold);
-    const hLine = this.add.rectangle(0, 0, 36, 2, COLORS.gold, 0.9);
-    const vLine = this.add.rectangle(0, 0, 2, 36, COLORS.gold, 0.9);
+    const hLine = this.add.rectangle(0, 0, 32, 2, COLORS.gold, 0.9);
+    const vLine = this.add.rectangle(0, 0, 2, 32, COLORS.gold, 0.9);
     this.crosshair.add([ring, hLine, vLine, dot]);
 
-    this.hint = this.add.text(width / 2, height - 118, '¡Fijá la puntería!', {
+    this.hint = this.add.text(width / 2, height - 130, '¡Fijá la puntería!', {
       fontFamily: FONT,
-      fontSize: '20px',
+      fontSize: '17px',
       fontStyle: '600',
       color: '#f4f0e6',
+      align: 'center',
+      wordWrap: { width: width - 28 },
     }).setOrigin(0.5);
 
     this.actionBtn = createButton(
       this,
       width / 2,
       height - 48,
-      280,
-      54,
+      Math.min(280, width - 40),
+      56,
       'FIJAR PUNTERÍA',
       () => this.onAction(),
-      { fill: COLORS.gold, textColor: '#1a1a1a', fontSize: '18px' },
+      { fill: COLORS.gold, textColor: '#1a1a1a', fontSize: '17px' },
     );
 
     this.createPowerUi(false);
 
     this.keeperIdle = this.tweens.add({
       targets: this.keeper,
-      x: this.goalX + 16,
+      x: this.goalX + 14,
       duration: 700,
       yoyo: true,
       repeat: -1,
@@ -115,33 +114,33 @@ export default class PenaltyScene extends Phaser.Scene {
 
     this.input.keyboard?.on('keydown-SPACE', this.onAction, this);
     this.input.on('pointerdown', (pointer) => {
-      // Ignore clicks on UI button area handled by button; allow pitch clicks
       if (this.phase === 'shot') return;
-      if (pointer.y > height - 90) return;
+      if (pointer.y > height - 95) return;
       this.onAction();
     });
   }
 
   createPowerUi(visible) {
     const { width, height } = this.scale;
-    const barW = 280;
+    const barW = Math.min(280, width - 48);
     const barH = 22;
     const x = width / 2;
-    const y = height - 168;
+    const y = height - 175;
 
-    this.powerLabel = this.add.text(x, y - 28, 'POTENCIA', {
+    this.powerLabel = this.add.text(x, y - 28, 'POTENCIA (rojo + punta = afuera)', {
       fontFamily: FONT,
-      fontSize: '14px',
+      fontSize: '12px',
       fontStyle: '600',
       color: '#f0c75e',
+      align: 'center',
+      wordWrap: { width: width - 28 },
     }).setOrigin(0.5).setVisible(visible);
 
     this.powerTrack = this.add.rectangle(x, y, barW, barH, 0x0a1a10, 1)
       .setStrokeStyle(2, COLORS.panelBorder)
       .setVisible(visible);
 
-    // sweet zone marker (high power but not max - max can hit post slightly more)
-    this.powerSweet = this.add.rectangle(x + barW * 0.18, y, barW * 0.28, barH - 4, 0x2f9e5d, 0.35)
+    this.powerSweet = this.add.rectangle(x + barW * 0.12, y, barW * 0.28, barH - 4, 0x2f9e5d, 0.35)
       .setVisible(visible);
 
     this.powerFill = this.add.rectangle(x - barW / 2, y, 4, barH - 4, COLORS.gold, 1)
@@ -161,43 +160,31 @@ export default class PenaltyScene extends Phaser.Scene {
   }
 
   startAimSweep() {
-    const pad = 28;
+    const pad = 10;
     const minX = this.goalLeft + pad;
     const maxX = this.goalRight - pad;
-    const minY = this.goalTop + 10;
-    const maxY = this.goalBottom - 10;
+    const minY = this.goalTop + 8;
+    const maxY = this.goalBottom - 8;
 
     this.crosshair.setPosition(
       Phaser.Math.Between(minX, maxX),
       Phaser.Math.Between(minY, maxY),
     );
 
+    const goRight = this.crosshair.x < this.goalX;
     this.aimTweenX = this.tweens.add({
       targets: this.crosshair,
-      x: maxX,
-      duration: 1100,
+      x: goRight ? maxX : minX,
+      duration: 1000,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
 
-    // Start going left if we're closer to right
-    if (this.crosshair.x > this.goalX) {
-      this.aimTweenX.stop();
-      this.aimTweenX = this.tweens.add({
-        targets: this.crosshair,
-        x: minX,
-        duration: 1100,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    }
-
     this.aimTweenY = this.tweens.add({
       targets: this.crosshair,
       y: minY,
-      duration: 1600,
+      duration: 1500,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
@@ -212,7 +199,7 @@ export default class PenaltyScene extends Phaser.Scene {
     this.powerTween = this.tweens.add({
       targets: this.powerNeedle,
       x: this.powerBarX + this.powerBarW,
-      duration: 850,
+      duration: 800,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
@@ -224,7 +211,6 @@ export default class PenaltyScene extends Phaser.Scene {
         );
         this.power = t;
         this.powerFill.width = Math.max(4, t * this.powerBarW);
-        // color feedback
         if (t > 0.82) this.powerFill.setFillStyle(COLORS.red, 1);
         else if (t > 0.55) this.powerFill.setFillStyle(0x7dffa8, 1);
         else this.powerFill.setFillStyle(COLORS.gold, 1);
@@ -233,11 +219,8 @@ export default class PenaltyScene extends Phaser.Scene {
   }
 
   onAction() {
-    if (this.phase === 'aim') {
-      this.lockAim();
-    } else if (this.phase === 'power') {
-      this.lockPowerAndShoot();
-    }
+    if (this.phase === 'aim') this.lockAim();
+    else if (this.phase === 'power') this.lockPowerAndShoot();
   }
 
   lockAim() {
@@ -249,7 +232,6 @@ export default class PenaltyScene extends Phaser.Scene {
 
     this.lockedAim = { x: this.crosshair.x, y: this.crosshair.y };
 
-    // freeze marker
     this.tweens.add({
       targets: this.crosshair,
       scale: 1.2,
@@ -257,7 +239,7 @@ export default class PenaltyScene extends Phaser.Scene {
       yoyo: true,
     });
 
-    this.subtitle.setText('2/2 · Potencia: click o ESPACIO en la zona verde (muy arriba puede pegar en el palo)');
+    this.subtitle.setText('2/2 · Tocá en zona verde. Rojo + punta = afuera');
     this.hint.setText('¡Elegí la potencia!');
     this.actionBtn.text.setText('PEGARLE');
 
@@ -275,9 +257,8 @@ export default class PenaltyScene extends Phaser.Scene {
     const target = this.lockedAim;
     const power = this.power;
 
-    // Normalized aim: -1 left … 1 right, 0 low … 1 high
     const nx = Phaser.Math.Clamp(
-      ((target.x - this.goalX) / (this.goalWidth / 2 - 20)),
+      ((target.x - this.goalX) / (this.goalWidth / 2 - 12)),
       -1,
       1,
     );
@@ -294,29 +275,48 @@ export default class PenaltyScene extends Phaser.Scene {
     this.playShotAnimation(target, power, result);
   }
 
-  /**
-   * Decide gol / atajada / palo según skill + dificultad por racha.
-   */
   resolveShot({ nx, ny, corner, power, target }) {
-    const diff = gameState.keeperDifficulty(); // 0..1
+    const diff = gameState.keeperDifficulty();
 
-    // Too weak: barely arrives, easy save
     if (power < 0.18) {
       return { type: 'save', hint: 'Muy floja… fácil para el arquero', quality: power };
     }
 
-    // Overhit near post: woodwork risk scales with power + frame proximity + difficulty
+    // Demasiado fuerte (rojo) + punta/ángulo: se va afuera
+    const riskyAim = corner > 0.72 || ny > 0.86;
+    if (power >= 0.82 && riskyAim) {
+      return {
+        type: 'wide',
+        hint: power >= 0.92 ? '¡Le pegó demasiado! Afuera' : '¡Se fue afuera por la punta!',
+        quality: power,
+        target,
+        side: Math.sign(nx) || (Math.random() < 0.5 ? -1 : 1),
+        high: ny > 0.8,
+      };
+    }
+
+    // Rojo extremo aunque no sea punta extrema: chance alta de afuera/palo
+    if (power >= 0.92 && corner > 0.55) {
+      return {
+        type: 'wide',
+        hint: '¡Se le fue el tiro!',
+        quality: power,
+        target,
+        side: Math.sign(nx) || 1,
+        high: ny > 0.7,
+      };
+    }
+
     const nearPost = corner > 0.88 || ny > 0.9;
-    let postChance = nearPost && power > 0.9 ? 0.35 : nearPost && power > 0.82 ? 0.18 : 0;
-    postChance += diff * 0.08;
+    let postChance = nearPost && power > 0.78 ? 0.28 : 0;
+    postChance += diff * 0.06;
     if (Math.random() < postChance) {
       return { type: 'post', hint: '¡Al palo!', quality: power, target };
     }
 
-    // Harder streak → faster reaction, longer dive, less error, bigger catch
     const reactionMs = Phaser.Math.Linear(320, 90, power) * Phaser.Math.Linear(1, 0.62, diff);
-    const maxDive = Phaser.Math.Linear(95, 150, 1 - corner * 0.35) * Phaser.Math.Linear(1, 1.28, diff);
-    const diveError = Phaser.Math.Between(-28, 28) * (1.1 - power * 0.5) * Phaser.Math.Linear(1, 0.45, diff);
+    const maxDive = Phaser.Math.Linear(70, 120, 1 - corner * 0.35) * Phaser.Math.Linear(1, 1.28, diff);
+    const diveError = Phaser.Math.Between(-24, 24) * (1.1 - power * 0.5) * Phaser.Math.Linear(1, 0.45, diff);
 
     const desiredX = target.x + diveError;
     const reachX = Phaser.Math.Clamp(
@@ -325,12 +325,10 @@ export default class PenaltyScene extends Phaser.Scene {
       this.keeperHomeX + maxDive,
     );
 
-    const baseCatch = Phaser.Math.Linear(78, 36, power) * Phaser.Math.Linear(1, 1.35, diff);
+    const baseCatch = Phaser.Math.Linear(70, 32, power) * Phaser.Math.Linear(1, 1.35, diff);
     const catchRadius = baseCatch * (1.15 - corner * 0.45) * (1.1 - ny * 0.25);
-
-    const dist = Math.hypot(reachX - target.x, (this.goalY + 70) - target.y);
+    const dist = Math.hypot(reachX - target.x, (this.goalY + 60) - target.y);
     const saved = dist < catchRadius;
-
     const clutchFail = power > 0.7 && corner > 0.7 && Math.random() < (0.06 + diff * 0.08);
 
     if (saved || clutchFail) {
@@ -355,9 +353,9 @@ export default class PenaltyScene extends Phaser.Scene {
   playShotAnimation(target, power, result) {
     if (this.keeperIdle) this.keeperIdle.stop();
 
-    const flightMs = Phaser.Math.Linear(720, 320, power);
+    const flightMs = Phaser.Math.Linear(720, 300, power);
     const keeperDelay = result.reactionMs ?? Phaser.Math.Linear(300, 100, power);
-    const keeperX = result.keeperX ?? this.goalX + Math.sign(target.x - this.goalX) * 80;
+    const keeperX = result.keeperX ?? this.goalX + Math.sign(target.x - this.goalX) * 70;
 
     this.time.delayedCall(keeperDelay, () => {
       this.tweens.add({
@@ -373,30 +371,34 @@ export default class PenaltyScene extends Phaser.Scene {
     let endY = target.y;
 
     if (result.type === 'post') {
-      // deflect off post
-      endX = target.x > this.goalX ? this.goalRight - 6 : this.goalLeft + 6;
-      endY = Math.min(target.y, this.goalY + 30);
+      endX = target.x > this.goalX ? this.goalRight - 4 : this.goalLeft + 4;
+      endY = Math.min(target.y, this.goalY + 24);
+    }
+
+    if (result.type === 'wide') {
+      const side = result.side || 1;
+      endX = side > 0 ? this.goalRight + 55 : this.goalLeft - 55;
+      endY = result.high ? this.goalY - 35 : target.y - 10;
     }
 
     this.tweens.add({
       targets: this.ball,
       x: endX,
       y: endY,
-      scale: 0.42,
+      scale: result.type === 'wide' ? 0.35 : 0.4,
       angle: 420 * (0.5 + power),
       duration: flightMs,
       ease: 'Cubic.easeOut',
       onComplete: () => {
-        if (result.type === 'goal') {
-          this.onGoal(result);
-        } else if (result.type === 'post') {
-          this.onPost(result);
-        } else {
+        if (result.type === 'goal') this.onGoal(result);
+        else if (result.type === 'post') this.onPost(result);
+        else if (result.type === 'wide') this.onWide(result);
+        else {
           this.tweens.add({
             targets: this.ball,
             x: keeperX + 6,
             y: this.keeper.y - 8,
-            scale: 0.32,
+            scale: 0.3,
             duration: 110,
             onComplete: () => this.onSave(result),
           });
@@ -408,21 +410,19 @@ export default class PenaltyScene extends Phaser.Scene {
   onGoal(result) {
     sfx.goal();
     this.cameras.main.flash(280, 120, 220, 140);
-    spawnConfetti(this, { count: 42, y: this.goalY + 40, spread: 160 });
+    spawnConfetti(this, { count: 36, y: this.goalY + 30, spread: 120 });
     this.hint.setColor('#7dffa8');
     this.hint.setText(`¡GOOOL! ${result.hint}`);
 
     this.tweens.add({
       targets: this.ball,
-      scale: 0.38,
-      y: this.ball.y + 10,
+      scale: 0.36,
+      y: this.ball.y + 8,
       duration: 160,
       yoyo: true,
     });
 
-    if (result.quality > 0.65) {
-      gameState.score += 25;
-    }
+    if (result.quality > 0.65) gameState.score += 25;
 
     gameState.penaltyScored();
     this.finishAfter(1300);
@@ -433,7 +433,6 @@ export default class PenaltyScene extends Phaser.Scene {
     this.cameras.main.shake(220, 0.012);
     this.hint.setColor('#ffb4a8');
     this.hint.setText(result.hint || '¡Atajó! Perdés una vida');
-
     gameState.penaltyMissed();
     this.finishAfter(1300);
   }
@@ -444,13 +443,31 @@ export default class PenaltyScene extends Phaser.Scene {
     this.hint.setColor('#ffd27a');
     this.hint.setText('¡Al palo! No entra… −1 vida');
 
-    // rebound out
     this.tweens.add({
       targets: this.ball,
-      x: this.goalX + (this.ball.x > this.goalX ? 80 : -80),
-      y: this.ball.y + 90,
-      scale: 0.5,
+      x: this.goalX + (this.ball.x > this.goalX ? 70 : -70),
+      y: this.ball.y + 80,
+      scale: 0.48,
       duration: 280,
+      ease: 'Quad.easeOut',
+    });
+
+    gameState.penaltyMissed();
+    this.finishAfter(1400);
+  }
+
+  onWide(result) {
+    sfx.wrong();
+    this.cameras.main.shake(160, 0.008);
+    this.hint.setColor('#ffb4a8');
+    this.hint.setText(`${result.hint} −1 vida`);
+
+    this.tweens.add({
+      targets: this.ball,
+      x: this.ball.x + (result.side > 0 ? 40 : -40),
+      y: this.ball.y + 50,
+      alpha: 0.55,
+      duration: 320,
       ease: 'Quad.easeOut',
     });
 
@@ -477,20 +494,21 @@ export default class PenaltyScene extends Phaser.Scene {
     g.fillRect(0, 0, width, height);
 
     for (let x = 0; x < width; x += 64) {
-      this.add.image(x + 32, 95, 'crowd').setAlpha(0.7);
+      this.add.image(x + 32, 88, 'crowd').setAlpha(0.65);
     }
 
     g.fillStyle(COLORS.pitch, 1);
-    g.fillRect(0, height * 0.3, width, height * 0.7);
+    g.fillRect(0, height * 0.26, width, height * 0.74);
 
-    for (let y = height * 0.3; y < height; y += 40) {
+    for (let y = height * 0.26; y < height; y += 36) {
       g.fillStyle(COLORS.pitchLight, 0.22);
-      g.fillRect(0, y, width, 20);
+      g.fillRect(0, y, width, 18);
     }
 
     g.lineStyle(2, COLORS.cream, 0.55);
-    g.strokeRect(width / 2 - 230, height - 270, 460, 190);
-    g.strokeCircle(width / 2, height - 150, 10);
+    const boxW = Math.min(300, width - 50);
+    g.strokeRect(width / 2 - boxW / 2, height - 250, boxW, 160);
+    g.strokeCircle(width / 2, height - 175, 8);
   }
 
   drawGoal() {
@@ -502,20 +520,20 @@ export default class PenaltyScene extends Phaser.Scene {
     g.fillRect(x, y, this.goalWidth, this.goalHeight);
 
     g.lineStyle(2, 0xffffff, 0.18);
-    for (let i = 0; i <= 12; i += 1) {
-      g.lineBetween(x + (i * this.goalWidth) / 12, y, x + (i * this.goalWidth) / 12, y + this.goalHeight);
+    for (let i = 0; i <= 10; i += 1) {
+      g.lineBetween(x + (i * this.goalWidth) / 10, y, x + (i * this.goalWidth) / 10, y + this.goalHeight);
     }
-    for (let j = 0; j <= 6; j += 1) {
-      g.lineBetween(x, y + (j * this.goalHeight) / 6, x + this.goalWidth, y + (j * this.goalHeight) / 6);
+    for (let j = 0; j <= 5; j += 1) {
+      g.lineBetween(x, y + (j * this.goalHeight) / 5, x + this.goalWidth, y + (j * this.goalHeight) / 5);
     }
 
-    g.lineStyle(9, COLORS.white, 1);
+    g.lineStyle(8, COLORS.white, 1);
     g.lineBetween(x, y + this.goalHeight, x, y);
     g.lineBetween(x, y, x + this.goalWidth, y);
     g.lineBetween(x + this.goalWidth, y, x + this.goalWidth, y + this.goalHeight);
 
     g.lineStyle(3, COLORS.cream, 0.75);
-    g.lineBetween(x - 24, y + this.goalHeight, x + this.goalWidth + 24, y + this.goalHeight);
+    g.lineBetween(x - 16, y + this.goalHeight, x + this.goalWidth + 16, y + this.goalHeight);
   }
 
   shutdown() {

@@ -31,43 +31,45 @@ export default class QuizScene extends Phaser.Scene {
 
     const q = gameState.currentQuestion();
     const { width, height } = this.scale;
+    const contentW = Math.min(380, width - 32);
 
     this.drawBackground();
     this.drawHud();
 
     const catColor = CATEGORY_COLOR[q.category] || '#f0c75e';
-    const catBg = this.add.rectangle(width / 2, 118, 160, 28, COLORS.panel, 0.95)
+    const catBg = this.add.rectangle(width / 2, 100, 150, 26, COLORS.panel, 0.95)
       .setStrokeStyle(1, COLORS.panelBorder);
     this.add.text(catBg.x, catBg.y, q.category.toUpperCase(), {
       fontFamily: FONT,
-      fontSize: '14px',
+      fontSize: '13px',
       fontStyle: '700',
       color: catColor,
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 148, q.question, {
+    this.add.text(width / 2, 128, q.question, {
       fontFamily: FONT,
-      fontSize: '25px',
+      fontSize: '20px',
       fontStyle: '600',
       color: '#f4f0e6',
       align: 'center',
-      wordWrap: { width: width - 120 },
+      wordWrap: { width: contentW },
     }).setOrigin(0.5, 0);
 
     this.buttons = [];
-    const startY = 305;
-    const gap = 72;
+    const startY = 300;
+    const gap = 78;
+    const btnW = contentW;
 
     q.options.forEach((option, index) => {
       const btn = createButton(
         this,
         width / 2,
         startY + index * gap,
-        Math.min(640, width - 80),
-        58,
+        btnW,
+        64,
         option,
         () => this.handleAnswer(index),
-        { fill: COLORS.panel, textColor: '#f4f0e6', fontSize: '19px' },
+        { fill: COLORS.panel, textColor: '#f4f0e6', fontSize: '17px' },
       );
       btn.bg.setStrokeStyle(2, COLORS.panelBorder);
       this.buttons.push(btn);
@@ -87,64 +89,59 @@ export default class QuizScene extends Phaser.Scene {
     g.fillStyle(COLORS.pitchDark, 1);
     g.fillRect(0, 0, width, height);
     g.fillStyle(COLORS.pitch, 0.45);
-    g.fillRoundedRect(30, 84, width - 60, height - 110, 18);
+    g.fillRoundedRect(12, 72, width - 24, height - 90, 16);
   }
 
   drawHud() {
     const { width } = this.scale;
 
-    this.add.text(40, 22, `Puntos: ${gameState.score}`, {
+    this.add.text(16, 18, `${gameState.score}`, {
       fontFamily: FONT,
       fontSize: '20px',
-      fontStyle: '600',
+      fontStyle: '700',
       color: '#f4f0e6',
     });
 
-    this.add.text(width / 2, 22, `${gameState.modeLabel()} · Racha ${gameState.streak}`, {
+    this.add.text(width / 2, 18, `${gameState.modeLabel()} · x${gameState.streak}`, {
       fontFamily: FONT,
-      fontSize: '16px',
+      fontSize: '14px',
       color: '#b7c9b0',
     }).setOrigin(0.5, 0);
 
-    const heartsX = width - 108;
+    const heartsX = width - 96;
     for (let i = 0; i < 3; i += 1) {
       const key = i < gameState.lives ? 'heart' : 'heart-empty';
-      this.add.image(heartsX + i * 34, 34, key).setScale(0.85);
+      this.add.image(heartsX + i * 30, 30, key).setScale(0.78);
     }
 
-    this.add.text(width - 40, 56, gameState.progressLabel(), {
+    this.add.text(width - 16, 50, gameState.progressLabel(), {
       fontFamily: FONT,
-      fontSize: '13px',
+      fontSize: '12px',
       color: '#6f8f78',
     }).setOrigin(1, 0);
   }
 
   createTimerUi() {
     const { width } = this.scale;
-    const barW = Math.min(640, width - 80);
+    const barW = Math.min(380, width - 32);
     const x = width / 2;
-    const y = 255;
+    const y = 250;
 
-    // Clock chip
-    this.timerChip = this.add.container(x, y - 28);
-    const chipBg = this.add.rectangle(0, 0, 72, 28, 0x0a1a10, 1)
+    this.timerChip = this.add.container(x, y - 26);
+    const chipBg = this.add.rectangle(0, 0, 64, 26, 0x0a1a10, 1)
       .setStrokeStyle(2, COLORS.gold);
     this.timerText = this.add.text(0, 0, `${this.timeLeft}`, {
       fontFamily: FONT,
-      fontSize: '18px',
+      fontSize: '17px',
       fontStyle: '800',
       color: '#f0c75e',
     }).setOrigin(0.5);
     this.timerChip.add([chipBg, this.timerText]);
     this.timerChipBg = chipBg;
 
-    this.add.rectangle(x, y, barW, 16, 0x0a1a10, 1).setStrokeStyle(2, COLORS.panelBorder);
-
-    // Segments feel
-    this.timerBar = this.add.rectangle(x - barW / 2, y, barW, 10, COLORS.gold, 1).setOrigin(0, 0.5);
+    this.add.rectangle(x, y, barW, 14, 0x0a1a10, 1).setStrokeStyle(2, COLORS.panelBorder);
+    this.timerBar = this.add.rectangle(x - barW / 2, y, barW, 8, COLORS.gold, 1).setOrigin(0, 0.5);
     this.timerBarMax = barW;
-
-    this.timerGlow = this.add.rectangle(x, y, barW, 16, COLORS.gold, 0.08);
   }
 
   onTick() {
@@ -196,7 +193,7 @@ export default class QuizScene extends Phaser.Scene {
     this.buttons[q.answer].bg.setFillStyle(0x2f9e5d, 1);
 
     sfx.wrong();
-    this.showFeedback('¡Se acabó el tiempo! Al penal…', '#ffb4a8');
+    this.showFeedback('¡Tiempo! Al penal…', '#ffb4a8');
 
     this.time.delayedCall(900, () => {
       gameState.markWrongAnswer();
@@ -224,7 +221,7 @@ export default class QuizScene extends Phaser.Scene {
       this.showFeedback(`¡Correcto! +${100 + gameState.streak * 25 + bonus}`, '#7dffa8');
     } else {
       sfx.wrong();
-      this.showFeedback('Fallaste… ¡a patear el penal!', '#ffb4a8');
+      this.showFeedback('Fallaste… ¡al penal!', '#ffb4a8');
     }
 
     this.time.delayedCall(900, () => {
@@ -240,17 +237,19 @@ export default class QuizScene extends Phaser.Scene {
 
   showFeedback(message, color) {
     const { width, height } = this.scale;
-    const feedback = this.add.text(width / 2, height - 52, message, {
+    const feedback = this.add.text(width / 2, height - 42, message, {
       fontFamily: FONT,
-      fontSize: '22px',
+      fontSize: '18px',
       fontStyle: '700',
       color,
+      wordWrap: { width: width - 24 },
+      align: 'center',
     }).setOrigin(0.5).setAlpha(0);
 
     this.tweens.add({
       targets: feedback,
       alpha: 1,
-      y: height - 62,
+      y: height - 50,
       duration: 250,
     });
   }
